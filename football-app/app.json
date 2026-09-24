@@ -1,0 +1,26 @@
+{
+  "expo": {
+    "name": "Village FC",
+    "slug": "village-fc-community",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "dark",
+    "splash": {
+      "backgroundColor": "#0B0F14"
+    },
+    "assetBundlePatterns": ["**/*"],
+    "ios": {
+      "supportsTablet": false,
+      "bundleIdentifier": "com.villagefc.app"
+    },
+    "android": {
+      "package": "com.villagefc.app",
+      "adaptiveIcon": {
+        "backgroundColor": "#0B0F14"
+      }
+    },
+    "plugins": ["expo-image-picker"],
+    "scheme": "villagefc"
+  }
+}

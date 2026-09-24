@@ -1,0 +1,55 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isAdmin() {
+      return isSignedIn() &&
+        request.auth.token.email != null &&
+        request.auth.token.email.lower() ==
+          get(/databases/$(database)/documents/config/adminConfig).data.adminEmail.lower();
+    }
+
+    // config/adminConfig — the single source of truth for who the Admin is.
+    // Everyone signed in can READ it (needed to detect admin on sign-in),
+    // but only the current Admin can ever change it.
+    match /config/adminConfig {
+      allow read: if isSignedIn();
+      allow write: if isAdmin();
+    }
+
+    // users/{uid} — each person can read/write only their own profile.
+    // The "role" field cannot be self-granted by a normal user.
+    match /users/{uid} {
+      allow read: if isSignedIn();
+      allow create: if isSignedIn() && request.auth.uid == uid &&
+        (request.resource.data.role == 'user' || isAdmin());
+      allow update: if isSignedIn() && request.auth.uid == uid &&
+        (!('role' in request.resource.data) ||
+         request.resource.data.role == resource.data.role ||
+         isAdmin());
+      allow delete: if isAdmin();
+    }
+
+    // players/{playerId} — readable by any signed-in user,
+    // but only the Admin can create, edit, or delete a player.
+    match /players/{playerId} {
+      allow read: if isSignedIn();
+      allow create, update, delete: if isAdmin();
+    }
+
+    // messages/{messageId} — any signed-in user can read and post,
+    // but only the Admin can delete (moderation) and no one can edit
+    // someone else's message after the fact.
+    match /messages/{messageId} {
+      allow read: if isSignedIn();
+      allow create: if isSignedIn() && request.resource.data.userId == request.auth.uid;
+      allow update: if false;
+      allow delete: if isAdmin() || (isSignedIn() && resource.data.userId == request.auth.uid);
+    }
+  }
+}
